@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import SearchBar from './components/SearchBar';
 import SearchStats from './components/SearchStats';
 import { useSearchHistory } from './utils/searchHistory';
+import { SmartLinkingEngine } from './utils/smartLinking';
 
 export default function Home() {
   const [content, setContent] = useState('');
@@ -11,6 +12,7 @@ export default function Home() {
   const [loadingWord, setLoadingWord] = useState('');
   const [showStats, setShowStats] = useState(false);
   const { history, addToHistory, wordCount } = useSearchHistory();
+  const [smartLinker] = useState(() => new SmartLinkingEngine());
 
   useEffect(() => {
     // Get random word and explanation on first load
@@ -133,39 +135,28 @@ export default function Home() {
   };
 
   const renderClickableText = (text) => {
-    // Split text into words and punctuation
-    const words = text.split(/(\s+|[.,;:!?()[\]{}"])/);
+    if (!text || !smartLinker) return text;
     
-    return words.map((word, index) => {
-      // If it's a meaningful word (not whitespace or punctuation)
-      if (word.match(/^[a-zA-Z]{2,}$/)) {
-        return (
-          <span
-            key={index}
-            className={`
-              relative cursor-pointer transition-all duration-200 ease-out
-              hover:text-blue-700 dark:hover:text-blue-400
-              px-1.5 py-0.5 -mx-1.5 -my-0.5 rounded-lg
-              hover:bg-blue-50 dark:hover:bg-blue-950/40
-              hover:shadow-sm hover:shadow-blue-200/30 dark:hover:shadow-blue-900/20
-              transform hover:scale-[1.02] hover:-translate-y-0.5
-              ${loadingWord === word ? 
-                'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 shadow-sm border border-blue-200/50 dark:border-blue-700/50' : 
-                'hover:border hover:border-blue-200/30 dark:hover:border-blue-700/30'
-              }
-              before:absolute before:inset-0 before:rounded-lg before:border before:border-transparent
-              hover:before:border-blue-300/20 dark:hover:before:border-blue-600/20
-              after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-0.5 after:bg-blue-500 after:rounded-full
-              hover:after:w-full after:transition-all after:duration-300
-            `}
-            onClick={() => handleWordClick(word)}
-          >
-            {word}
-          </span>
-        );
-      }
-      return <span key={index}>{word}</span>;
-    });
+    try {
+      return smartLinker.generateSmartLinks(text, handleWordClick, loadingWord);
+    } catch (error) {
+      console.error('Smart linking error:', error);
+      // Fallback to simple rendering if smart linking fails
+      return text.split(/(\s+|[.,;:!?()[\]{}"])/).map((word, index) => {
+        if (word.match(/^[a-zA-Z]{2,}$/)) {
+          return (
+            <span
+              key={index}
+              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors duration-200"
+              onClick={() => handleWordClick(word)}
+            >
+              {word}
+            </span>
+          );
+        }
+        return <span key={index}>{word}</span>;
+      });
+    }
   };
 
   const handleSearchSelect = (item) => {
@@ -270,35 +261,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-            
-            {/* Modern Action Button */}
-            <div className="flex justify-center mt-8 sm:mt-12">
-              <button
-                onClick={getRandomWordExplanation}
-                disabled={isLoading}
-                className="group relative bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-400 text-white font-medium px-6 sm:px-8 py-3 sm:py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 disabled:shadow-none transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 text-sm sm:text-base"
-              >
-                {/* Button content */}
-                <div className="flex items-center space-x-2 sm:space-x-3 relative z-10">
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Exploring...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>New Discovery</span>
-                    </>
-                  )}
-                </div>
-                
-                {/* Subtle shine effect */}
-                <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </button>
-            </div>
           </div>
         </main>
 
@@ -306,7 +268,7 @@ export default function Home() {
         <footer className="text-center">
           <div className="inline-flex items-center space-x-3 text-gray-500 dark:text-gray-400 text-sm">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-            <span className="font-light">Powered by Ollama AI</span>
+            <span className="font-light">An Onur Gültekin product</span>
             <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
           </div>
         </footer>
