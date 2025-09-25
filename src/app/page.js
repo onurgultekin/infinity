@@ -171,27 +171,25 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-500">
-      {/* Geometric Background Elements */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+      {/* Clean minimal background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-blue-100 dark:bg-blue-950/30 rounded-full blur-3xl opacity-60"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-purple-100 dark:bg-purple-950/30 rounded-2xl rotate-45 blur-2xl opacity-40"></div>
-        <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-indigo-50 dark:bg-indigo-950/20 rounded-full blur-3xl opacity-30"></div>
-        <div className="absolute bottom-20 right-1/3 w-28 h-28 bg-cyan-100 dark:bg-cyan-950/30 rounded-xl rotate-12 blur-2xl opacity-50"></div>
+        <div className="absolute top-32 right-20 w-px h-32 bg-gray-200 dark:bg-gray-800 rotate-12"></div>
+        <div className="absolute bottom-40 left-16 w-2 h-2 bg-blue-400 rounded-full"></div>
+        <div className="absolute top-1/2 left-8 w-1 h-16 bg-gray-300 dark:bg-gray-700"></div>
       </div>
       
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 max-w-5xl">
         {/* Header */}
-        <header className="text-center mb-12 sm:mb-4">
-          <div className="relative inline-block mb-8">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extralight text-gray-900 dark:text-gray-100 tracking-[-0.02em]">
-              Infinite
+        <header className="text-center mb-12 sm:mb-16">
+          <div className="mb-8">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 dark:text-gray-100 tracking-tight">
+              Infinite Word Wiki
             </h1>
-            {/* Decorative line */}
-            <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-blue-500 rounded-full"></div>
-            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-purple-500 rounded-full"></div>
+            {/* Simple underline */}
+            <div className="mt-4 w-12 h-px bg-blue-500 mx-auto"></div>
           </div>
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 dark:text-gray-400 font-light max-w-3xl mx-auto leading-relaxed px-4 mb-8">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 font-normal max-w-2xl mx-auto mb-8">
             Click any word to dive deeper into knowledge
           </p>
           
@@ -224,39 +222,55 @@ export default function Home() {
         <main className="mb-12 sm:mb-16">
           <div className="relative">
             {/* Content Card with depth */}
-            <div className="relative bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)] p-6 sm:p-8 lg:p-12 transition-all duration-500">
-              {/* Corner decorations */}
-              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 dark:bg-blue-400/5 rounded-bl-3xl rounded-tr-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-16 h-16 bg-purple-500/5 dark:bg-purple-400/5 rounded-tr-3xl rounded-bl-3xl"></div>
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6 sm:p-8 lg:p-10 transition-all duration-300">
+              {/* Clean minimal decorations */}
+              <div className="absolute top-0 right-0 w-12 h-12 bg-blue-50 dark:bg-blue-950/30 rounded-bl-2xl rounded-tr-2xl"></div>
+              <div className="absolute bottom-0 left-0 w-8 h-8 bg-gray-50 dark:bg-gray-800/50 rounded-tr-2xl rounded-bl-2xl"></div>
               
               {isLoading && !content ? (
                 <div className="text-center py-20">
                   <div className="relative mb-8">
-                    {/* Modern geometric loader */}
-                    <div className="w-16 h-16 mx-auto relative">
-                      <div className="absolute inset-0 border-2 border-gray-200 dark:border-gray-700 rounded-xl"></div>
-                      <div className="absolute inset-0 border-2 border-blue-500 border-r-transparent border-b-transparent rounded-xl animate-spin"></div>
-                      <div className="absolute inset-2 border-2 border-purple-500 border-l-transparent border-t-transparent rounded-lg animate-spin animate-reverse" style={{animationDuration: '1.5s'}}></div>
-                      <div className="absolute inset-4 bg-blue-500 rounded-sm animate-pulse"></div>
+                    {/* Clean, minimal loader */}
+                    <div className="w-12 h-12 mx-auto relative">
+                      <div className="absolute inset-0 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
+                      <div className="absolute inset-0 border-2 border-blue-500 border-r-transparent rounded-full animate-spin"></div>
                     </div>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-xl font-light tracking-wide">
-                    Discovering knowledge...
+                  <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">
+                    Loading...
                   </p>
-                  {/* Simple dots animation */}
-                  <div className="mt-6 flex justify-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+              ) : loadingWord && !content ? (
+                <div className="text-center py-20">
+                  <div className="relative mb-8">
+                    {/* Clean word-specific loader */}
+                    <div className="w-14 h-14 mx-auto relative">
+                      <div className="absolute inset-0 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
+                      <div className="absolute inset-0 border-2 border-blue-500 border-r-transparent rounded-full animate-spin"></div>
+                      <div className="absolute inset-2 border border-gray-300 dark:border-gray-600 rounded-full animate-ping opacity-30"></div>
+                    </div>
                   </div>
+                  <p className="text-gray-700 dark:text-gray-200 text-xl font-medium mb-1">
+                    <span className="text-blue-600 dark:text-blue-400">"{loadingWord}"</span>
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Gathering information...
+                  </p>
                 </div>
               ) : (
-                <div className="prose prose-lg sm:prose-xl prose-gray dark:prose-invert max-w-none">
+                <div className="prose prose-lg sm:prose-xl prose-gray dark:prose-invert max-w-none transition-all duration-500 ease-in-out animate-fadeInUp">
                   <div className="text-gray-700 dark:text-gray-300 leading-relaxed font-light text-base sm:text-lg lg:text-xl">
-                    {renderClickableText(content)}
-                    {(isLoading || loadingWord) && (
-                      <span className="inline-block w-0.5 sm:w-1 h-5 sm:h-6 bg-blue-500 animate-pulse ml-1 rounded-full"></span>
-                    )}
+                    <div className={`transition-opacity duration-300 ${content ? 'opacity-100' : 'opacity-50'}`}>
+                      {renderClickableText(content)}
+                      {(isLoading || loadingWord) && (
+                        <span className="inline-flex items-center ml-2">
+                          <span className="inline-block w-0.5 sm:w-1 h-5 sm:h-6 bg-blue-500 animate-pulse rounded-full mr-1"></span>
+                          <span className="text-blue-500 dark:text-blue-400 text-sm font-medium animate-pulse">
+                            {loadingWord ? `Loading "${loadingWord}"...` : 'Generating...'}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -266,10 +280,8 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="text-center">
-          <div className="inline-flex items-center space-x-3 text-gray-500 dark:text-gray-400 text-sm">
-            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
             <span className="font-light">An Onur Gültekin product</span>
-            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
           </div>
         </footer>
       </div>

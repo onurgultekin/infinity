@@ -49,6 +49,47 @@ body {
   }
 }
 
+/* Custom loading animations */
+@keyframes spin-reverse {
+  to { transform: rotate(-360deg); }
+}
+
+.animate-reverse {
+  animation-direction: reverse;
+}
+
+/* Smooth fade-in for content */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Loading dots with better timing */
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.animate-dot-bounce {
+  animation: dotBounce 1.4s infinite ease-in-out;
+}
+
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;

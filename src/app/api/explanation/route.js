@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 
-// Enhanced random words with more diverse vocabulary
+import Replicate from 'replicate';
+
+// Initialize Replicate client
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
+});
+
+// Enhanced random words with rich etymological backgrounds
 const randomWords = [
-  'serendipity', 'ephemeral', 'mellifluous', 'wanderlust', 'petrichor',
-  'solitude', 'resilience', 'nostalgia', 'euphoria', 'tranquil',
-  'innovation', 'curiosity', 'harmony', 'adventure', 'wisdom',
-  'creativity', 'mindfulness', 'perspective', 'gratitude', 'compassion',
-  'luminescence', 'quintessential', 'renaissance', 'symbiosis', 'paradox',
-  'metamorphosis', 'catalyst', 'zeitgeist', 'ubiquitous', 'synchronicity',
-  'transcendence', 'equilibrium', 'enigmatic', 'phenomenal', 'eloquent'
+  'infinite word wiki'
 ];
 
 function createEnhancedPrompt(word, isRandomWord = false) {
@@ -29,82 +30,43 @@ function createEnhancedPrompt(word, isRandomWord = false) {
     }
   }
 
-  const basePrompt = `You are an expert educator writing for "Infinite Wiki" - a platform where every word leads to deeper knowledge discovery.
-
-Write an engaging, comprehensive explanation about "${word}" that will captivate curious minds. Your response should:
-
-📚 STRUCTURE:
-- Start with a compelling definition that hooks the reader
-- Include fascinating etymology or word origins when relevant  
-- Provide real-world examples and applications
-- Add interesting historical context or cultural significance
-- Mention surprising connections to other fields or concepts
-
-✨ STYLE REQUIREMENTS:
-- Write in an conversational yet informative tone
-- Use vivid, descriptive language that makes concepts memorable
-- Include specific examples, stories, or analogies
-- Make every sentence engaging - this content should inspire clicks on other words
-- Aim for 180-250 words for optimal depth without overwhelming
-- NO markdown formatting, bullet points, or headers - pure flowing text
-
-🎯 ENGAGEMENT FOCUS:
-- Use words that naturally invite further exploration
-- Include terminology from different domains (science, art, philosophy, etc.)
-- Create natural curiosity bridges to related concepts
-- Write as if talking to an intelligent, curious friend
-
-${categoryHint}
-
-${isRandomWord ? 
-  `🌟 SPECIAL NOTE: This is the user's entry point to their knowledge journey - make it extraordinary and set the tone for infinite discovery!` :
-  `🔗 CONTEXT: The user clicked on "${word}" from another explanation - build on their curiosity and guide them deeper.`
-}
-
-Remember: Every word you write could be clicked for further exploration. Make them count! Write a single, flowing paragraph that reads beautifully.`;
+  const basePrompt = `Provide a concise, single-paragraph encyclopedia-style definition for the term: "${word}". Be informative and neutral. Do not use markdown, titles, or any special formatting. Respond with only the text of the definition itself. Use at least 100 words`;
 
   return basePrompt;
 }
 
 function getContextualPromptAddition(category) {
   const contextualHints = {
-    scientific: `🔬 SCIENTIFIC CONTEXT: Include precise scientific explanations but make them accessible. Connect to related scientific concepts, breakthrough discoveries, or practical applications in technology and research.`,
+    scientific: `🔬 SCIENTIFIC CONTEXT: Include precise scientific explanations but make them accessible. Connect to related scientific concepts, breakthrough discoveries, or practical applications in technology and research. Emphasize any Greek or Latin scientific terminology origins.`,
     
-    philosophical: `🤔 PHILOSOPHICAL CONTEXT: Explore the deeper meanings and implications. Reference key philosophers, schools of thought, or existential questions. Connect to human experience and universal themes.`,
+    philosophical: `🤔 PHILOSOPHICAL CONTEXT: Explore the deeper meanings and implications. Reference key philosophers, schools of thought, or existential questions. Connect to human experience and universal themes. Highlight how ancient philosophical terms evolved into modern usage.`,
     
-    artistic: `🎨 ARTISTIC CONTEXT: Highlight aesthetic qualities, creative expressions, and cultural impact. Reference art movements, famous works, or the role in human creative expression.`,
+    artistic: `🎨 ARTISTIC CONTEXT: Highlight aesthetic qualities, creative expressions, and cultural impact. Reference art movements, famous works, or the role in human creative expression. Show how artistic terminology traveled between cultures and languages.`,
     
-    emotional: `💭 EMOTIONAL CONTEXT: Explore the psychological and human aspects. Connect to feelings, relationships, personal growth, and the human condition.`,
+    emotional: `💭 EMOTIONAL CONTEXT: Explore the psychological and human aspects. Connect to feelings, relationships, personal growth, and the human condition. Reveal how emotional vocabulary developed across different cultures and time periods.`,
     
-    abstract: `🌀 ABSTRACT CONTEXT: Unpack complex conceptual meanings. Use concrete examples to illustrate abstract ideas. Connect to various fields where this concept appears.`
+    abstract: `🌀 ABSTRACT CONTEXT: Unpack complex conceptual meanings. Use concrete examples to illustrate abstract ideas. Connect to various fields where this concept appears. Show the linguistic journey of abstract concepts from ancient to modern times.`
   };
   
   return contextualHints[category] || '';
 }
 
-async function callOllamaStream(prompt) {
-  const response = await fetch('http://localhost:11434/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama3.1:8b', // You can change this to your preferred model
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      stream: true
-    }),
-  });
+async function callReplicateStream(prompt) {
+  try {
+    // Using Meta's Llama 2 7B Chat model on Replicate (faster and optimized)
+    const stream = await replicate.stream("meta/meta-llama-3-8b-instruct", {
+      input: {
+        prompt: prompt,
+        max_new_tokens: 1024,
+        temperature: 0.7
+      }
+    });
 
-  if (!response.ok) {
-    throw new Error(`Ollama API error: ${response.status}`);
+    return stream;
+  } catch (error) {
+    console.error('Replicate API error:', error);
+    throw error;
   }
-
-  return response;
 }
 
 export async function GET() {
@@ -113,56 +75,39 @@ export async function GET() {
     
     const prompt = createEnhancedPrompt(randomWord, true);
     
-    const ollamaResponse = await callOllamaStream(prompt);
+    const replicateStream = await callReplicateStream(prompt);
     
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = ollamaResponse.body?.getReader();
-        if (!reader) {
-          controller.error(new Error('No response body'));
-          return;
-        }
-
         try {
           // Send initial word info
           const initData = JSON.stringify({ word: randomWord, type: 'init' }) + '\n';
           controller.enqueue(new TextEncoder().encode(initData));
 
-          while (true) {
-            const { done, value } = await reader.read();
-            
-            if (done) break;
-            
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n').filter(line => line.trim());
-            
-            for (const line of lines) {
-              try {
-                const data = JSON.parse(line);
-                if (data.message?.content) {
-                  const streamData = JSON.stringify({ 
-                    content: data.message.content, 
-                    type: 'content',
-                    done: data.done || false 
-                  }) + '\n';
-                  controller.enqueue(new TextEncoder().encode(streamData));
-                }
-                
-                if (data.done) {
-                  controller.close();
-                  return;
-                }
-              } catch (e) {
-                // Skip invalid JSON lines
-                continue;
-              }
-            }
+          // Process Replicate stream - GET method
+          for await (const chunk of replicateStream) {
+            // Replicate chunk'lar string olarak geliyor, direkt kullan
+            const content = typeof chunk === 'string' ? chunk : chunk.toString();
+            const streamData = JSON.stringify({ 
+              content: content, 
+              type: 'content',
+              done: false 
+            }) + '\n';
+            controller.enqueue(new TextEncoder().encode(streamData));
           }
+
+          // Send completion signal
+          const doneData = JSON.stringify({ 
+            content: '', 
+            type: 'content',
+            done: true 
+          }) + '\n';
+          controller.enqueue(new TextEncoder().encode(doneData));
+          controller.close();
+
         } catch (error) {
           console.error('Streaming error:', error);
           controller.error(error);
-        } finally {
-          reader.releaseLock();
         }
       },
     });
@@ -196,56 +141,39 @@ export async function POST(request) {
 
     const prompt = createEnhancedPrompt(word, false);
     
-    const ollamaResponse = await callOllamaStream(prompt);
+    const replicateStream = await callReplicateStream(prompt);
     
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = ollamaResponse.body?.getReader();
-        if (!reader) {
-          controller.error(new Error('No response body'));
-          return;
-        }
-
         try {
           // Send initial word info
           const initData = JSON.stringify({ word: word, type: 'init' }) + '\n';
           controller.enqueue(new TextEncoder().encode(initData));
 
-          while (true) {
-            const { done, value } = await reader.read();
-            
-            if (done) break;
-            
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n').filter(line => line.trim());
-            
-            for (const line of lines) {
-              try {
-                const data = JSON.parse(line);
-                if (data.message?.content) {
-                  const streamData = JSON.stringify({ 
-                    content: data.message.content, 
-                    type: 'content',
-                    done: data.done || false 
-                  }) + '\n';
-                  controller.enqueue(new TextEncoder().encode(streamData));
-                }
-                
-                if (data.done) {
-                  controller.close();
-                  return;
-                }
-              } catch (e) {
-                // Skip invalid JSON lines
-                continue;
-              }
-            }
+          // Process Replicate stream - POST method
+          for await (const chunk of replicateStream) {
+            // Replicate chunk'lar string olarak geliyor, direkt kullan
+            const content = typeof chunk === 'string' ? chunk : chunk.toString();
+            const streamData = JSON.stringify({ 
+              content: content, 
+              type: 'content',
+              done: false 
+            }) + '\n';
+            controller.enqueue(new TextEncoder().encode(streamData));
           }
+
+          // Send completion signal
+          const doneData = JSON.stringify({ 
+            content: '', 
+            type: 'content',
+            done: true 
+          }) + '\n';
+          controller.enqueue(new TextEncoder().encode(doneData));
+          controller.close();
+
         } catch (error) {
           console.error('Streaming error:', error);
           controller.error(error);
-        } finally {
-          reader.releaseLock();
         }
       },
     });
