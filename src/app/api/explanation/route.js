@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-
 import Replicate from 'replicate';
 
 // Initialize Replicate client
@@ -51,18 +50,18 @@ function getContextualPromptAddition(category) {
   return contextualHints[category] || '';
 }
 
-async function callReplicateStream(prompt) {
+async function callReplicate(prompt) {
   try {
-    // Using Meta's Llama 2 7B Chat model on Replicate (faster and optimized)
-    const stream = await replicate.stream("meta/meta-llama-3-8b-instruct", {
+    // Using Llama 2 7B Chat - non-streaming version
+    const output = await replicate.run("meta/meta-llama-3-8b-instruct", {
       input: {
         prompt: prompt,
-        max_new_tokens: 1024,
+        max_new_tokens: 512,
         temperature: 0.7
       }
     });
 
-    return stream;
+    return Array.isArray(output) ? output.join('') : output;
   } catch (error) {
     console.error('Replicate API error:', error);
     throw error;
@@ -72,59 +71,22 @@ async function callReplicateStream(prompt) {
 export async function GET() {
   try {
     const randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
-    
     const prompt = createEnhancedPrompt(randomWord, true);
     
-    const replicateStream = await callReplicateStream(prompt);
+    const content = await callReplicate(prompt);
     
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Send initial word info
-          const initData = JSON.stringify({ word: randomWord, type: 'init' }) + '\n';
-          controller.enqueue(new TextEncoder().encode(initData));
-
-          // Process Replicate stream - GET method
-          for await (const chunk of replicateStream) {
-            // Replicate chunk'lar string olarak geliyor, direkt kullan
-            const content = typeof chunk === 'string' ? chunk : chunk.toString();
-            const streamData = JSON.stringify({ 
-              content: content, 
-              type: 'content',
-              done: false 
-            }) + '\n';
-            controller.enqueue(new TextEncoder().encode(streamData));
-          }
-
-          // Send completion signal
-          const doneData = JSON.stringify({ 
-            content: '', 
-            type: 'content',
-            done: true 
-          }) + '\n';
-          controller.enqueue(new TextEncoder().encode(doneData));
-          controller.close();
-
-        } catch (error) {
-          console.error('Streaming error:', error);
-          controller.error(error);
-        }
-      },
+    return NextResponse.json({
+      word: randomWord,
+      content: content,
+      success: true
     });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+    
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate content' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: error.message,
+      success: false
+    }, { status: 500 });
   }
 }
 
@@ -133,63 +95,23 @@ export async function POST(request) {
     const { word } = await request.json();
     
     if (!word) {
-      return NextResponse.json(
-        { error: 'Word is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Word is required' }, { status: 400 });
     }
 
     const prompt = createEnhancedPrompt(word, false);
+    const content = await callReplicate(prompt);
     
-    const replicateStream = await callReplicateStream(prompt);
+    return NextResponse.json({
+      word: word,
+      content: content,
+      success: true
+    });
     
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Send initial word info
-          const initData = JSON.stringify({ word: word, type: 'init' }) + '\n';
-          controller.enqueue(new TextEncoder().encode(initData));
-
-          // Process Replicate stream - POST method
-          for await (const chunk of replicateStream) {
-            // Replicate chunk'lar string olarak geliyor, direkt kullan
-            const content = typeof chunk === 'string' ? chunk : chunk.toString();
-            const streamData = JSON.stringify({ 
-              content: content, 
-              type: 'content',
-              done: false 
-            }) + '\n';
-            controller.enqueue(new TextEncoder().encode(streamData));
-          }
-
-          // Send completion signal
-          const doneData = JSON.stringify({ 
-            content: '', 
-            type: 'content',
-            done: true 
-          }) + '\n';
-          controller.enqueue(new TextEncoder().encode(doneData));
-          controller.close();
-
-        } catch (error) {
-          console.error('Streaming error:', error);
-          controller.error(error);
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate content' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: error.message,
+      success: false
+    }, { status: 500 });
   }
 }

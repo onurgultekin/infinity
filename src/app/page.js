@@ -24,48 +24,15 @@ export default function Home() {
     setContent('');
     try {
       const response = await fetch('/api/explanation');
-      const reader = response.body?.getReader();
+      const data = await response.json();
       
-      if (!reader) {
-        throw new Error('No response body');
+      if (data.success) {
+        setContent(data.content);
+        addToHistory(data.word, data.content);
+      } else {
+        setContent(`Error: ${data.error}`);
       }
-
-      let fullContent = '';
       
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            
-            if (data.type === 'content') {
-              fullContent += data.content;
-              setContent(fullContent);
-              
-              // Stop loading indicator once content starts flowing
-              if (isLoading) {
-                setIsLoading(false);
-              }
-            }
-            
-            // Check if response is complete and add to history
-            if (data.done && fullContent) {
-              // Get the word from the initial data or use a default
-              const wordToSave = data.word || 'Random Word';
-              addToHistory(wordToSave, fullContent);
-            }
-          } catch (e) {
-            // Skip invalid JSON lines
-            continue;
-          }
-        }
-      }
     } catch (error) {
       console.error('Error:', error);
       setContent('Error loading content. Please try again.');
@@ -86,46 +53,15 @@ export default function Home() {
         body: JSON.stringify({ word }),
       });
       
-      const reader = response.body?.getReader();
+      const data = await response.json();
       
-      if (!reader) {
-        throw new Error('No response body');
-      }
-
-      let fullContent = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            
-            if (data.type === 'content') {
-              fullContent += data.content;
-              setContent(fullContent);
-              
-              // Clear word loading indicator once content starts flowing
-              if (loadingWord) {
-                setLoadingWord('');
-              }
-            }
-          } catch (e) {
-            // Skip invalid JSON lines
-            continue;
-          }
-        }
+      if (data.success) {
+        setContent(data.content);
+        addToHistory(word, data.content);
+      } else {
+        setContent(`Error: ${data.error}`);
       }
       
-      // Add to history after content is complete
-      if (fullContent) {
-        addToHistory(word, fullContent);
-      }
     } catch (error) {
       console.error('Error:', error);
       setContent('Error loading content. Please try again.');
@@ -253,23 +189,12 @@ export default function Home() {
                   <p className="text-gray-700 dark:text-gray-200 text-xl font-medium mb-1">
                     <span className="text-blue-600 dark:text-blue-400">"{loadingWord}"</span>
                   </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    Gathering information...
-                  </p>
                 </div>
               ) : (
                 <div className="prose prose-lg sm:prose-xl prose-gray dark:prose-invert max-w-none transition-all duration-500 ease-in-out animate-fadeInUp">
                   <div className="text-gray-700 dark:text-gray-300 leading-relaxed font-light text-base sm:text-lg lg:text-xl">
                     <div className={`transition-opacity duration-300 ${content ? 'opacity-100' : 'opacity-50'}`}>
                       {renderClickableText(content)}
-                      {(isLoading || loadingWord) && (
-                        <span className="inline-flex items-center ml-2">
-                          <span className="inline-block w-0.5 sm:w-1 h-5 sm:h-6 bg-blue-500 animate-pulse rounded-full mr-1"></span>
-                          <span className="text-blue-500 dark:text-blue-400 text-sm font-medium animate-pulse">
-                            {loadingWord ? `Loading "${loadingWord}"...` : 'Generating...'}
-                          </span>
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
